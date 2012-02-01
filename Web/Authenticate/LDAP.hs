@@ -40,12 +40,12 @@ loginLDAP user pass ldapHost ldapPort' initDN initPassword searchDN ldapScope =
    initBindResult <- try (ldapSimpleBind ldapOBJ initDN initPassword) 
                                                  :: IO (Either LDAPException ())
    case initBindResult of
-     Left _ -> do -- Successful initial bind
+     Right _ -> do -- Successful initial bind
        ldapOBJ' <- ldapInit ldapHost ldapPort'
        userBindResult <- try (ldapSimpleBind ldapOBJ' (unpack user) pass) 
                                                  :: IO (Either LDAPException ())
        case userBindResult of
-         Left _ -> do -- Successful user bind
+         Right _ -> do -- Successful user bind
            entry <- ldapSearch ldapOBJ  
                                searchDN 
                                ldapScope
@@ -53,5 +53,5 @@ loginLDAP user pass ldapHost ldapPort' initDN initPassword searchDN ldapScope =
                                LDAPAllUserAttrs
                                False
            return $ Ok entry
-         Right _ -> return WrongPassword
-     Right _ -> return NoSuchUser    
+         Left _ -> return WrongPassword
+     Left _ -> return NoSuchUser    
