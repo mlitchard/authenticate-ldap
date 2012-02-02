@@ -14,18 +14,22 @@ module Web.Authenticate.LDAP
 import Data.Text (Text,unpack)
 import LDAP
 import Control.Exception
-
+import Control.Monad.IO.Class
   
 data LDAPAuthResult = Ok [LDAPEntry]
                     | NoSuchUser
                     | WrongPassword
+                    | InitialBindFail
 
 instance Show LDAPAuthResult where
   show (Ok _            )         = "Login successful"
   show NoSuchUser                 = "Wrong username"
   show WrongPassword              = "Wrong password"
+  show InitialBindFail            = "The initial bind attempt to the ldap" ++
+                                    "server failed"
    
 loginLDAP :: Text -> -- user's identifier
+             String -> -- user's DN
              String -> -- user's password
              String -> -- LDAPHost
              LDAPInt -> -- LDAP port
@@ -34,24 +38,26 @@ loginLDAP :: Text -> -- user's identifier
              Maybe String -> --  Base DN for user search, if any
              LDAPScope -> -- Scope of User search
              IO LDAPAuthResult
-loginLDAP user pass ldapHost ldapPort' initDN initPassword searchDN ldapScope =
+loginLDAP user userDN pass ldapHost ldapPort' initDN initPassword searchDN ldapScope =
   do
    ldapOBJ <- ldapInit ldapHost ldapPort'
    initBindResult <- try (ldapSimpleBind ldapOBJ initDN initPassword) 
                                                  :: IO (Either LDAPException ())
    case initBindResult of
      Right _ -> do -- Successful initial bind
-       ldapOBJ' <- ldapInit ldapHost ldapPort'
-       userBindResult <- try (ldapSimpleBind ldapOBJ' (unpack user) pass) 
-                                                 :: IO (Either LDAPException ())
-       case userBindResult of
-         Right _ -> do -- Successful user bind
-           entry <- ldapSearch ldapOBJ  
-                               searchDN 
-                               ldapScope
-                               (Just ("sAMAccountName=" ++ (unpack user)))
-                               LDAPAllUserAttrs
-                               False
-           return $ Ok entry
-         Left _ -> return WrongPassword
-     Left _ -> return NoSuchUser    
+       entry <- ldapSearch ldapOBJ
+                           searchDN
+                           ldapScope
+                           (Just ("sAMAccountName=" ++  (unpack user)))
+                           LDAPAllUserAttrs
+                           False
+-- FIXME y u no make new function for nested case statement?       
+       case entry of
+         [LDAPEntry _ _] -> do
+                             ldapOBJ' <- ldapInit ldapHost ldapPort'  
+                             userBindResult <- try (ldapSimpleBind ldapOBJ' userDN pass) :: IO (Either LDAPException ())
+                             case userBindResult of
+                               Right _ -> return $ Ok entry -- Successful user bind
+                               Left _ -> return WrongPassword
+         _               -> return NoSuchUser
+     Left _ -> return InitialBindFail    
