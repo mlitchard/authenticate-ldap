@@ -10,7 +10,7 @@ category:        Web
 stability:       Experimental 
 cabal-version:   >= 1.6
 build-type:      Simple
-homepage:        http://github.com:mlitchard/authenticate-ldap
+homepage:        http://github.com/mlitchard/authenticate-ldap
 
 
 library
