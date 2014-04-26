@@ -31,16 +31,15 @@ instance Show LDAPAuthResult where
 loginLDAP :: Text -> -- user's identifier
              String -> -- user's DN
              String -> -- user's password
-             String -> -- LDAPHost
-             LDAPInt -> -- LDAP port
+             String -> -- LDAP URI
              String -> -- DN for initial bind
              String -> -- Password for initial bind
              Maybe String -> --  Base DN for user search, if any
              LDAPScope -> -- Scope of User search
              IO LDAPAuthResult
-loginLDAP user userDN pass ldapHost ldapPort' initDN initPassword searchDN ldapScope =
+loginLDAP user userDN pass ldapUri initDN initPassword searchDN ldapScope =
   do
-   ldapOBJ <- ldapInit ldapHost ldapPort'
+   ldapOBJ <- ldapInitialize ldapUri
    initBindResult <- try (ldapSimpleBind ldapOBJ initDN initPassword) 
                                                  :: IO (Either LDAPException ())
    case initBindResult of
@@ -54,7 +53,7 @@ loginLDAP user userDN pass ldapHost ldapPort' initDN initPassword searchDN ldapS
 -- FIXME y u no make new function for nested case statement?       
        case entry of
          [LDAPEntry _ _] -> do
-                             ldapOBJ' <- ldapInit ldapHost ldapPort'  
+                             ldapOBJ' <- ldapInitialize ldapUri
                              userBindResult <- try (ldapSimpleBind ldapOBJ' userDN pass) :: IO (Either LDAPException ())
                              case userBindResult of
                                Right _ -> return $ Ok entry -- Successful user bind
