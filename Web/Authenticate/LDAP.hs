@@ -16,7 +16,7 @@ import LDAP
 import Control.Exception
 import Control.Monad.IO.Class
   
-data LDAPAuthResult = Ok [LDAPEntry]
+data LDAPAuthResult = Ok LDAPEntry
                     | NoSuchUser
                     | WrongPassword
                     | InitialBindFail
@@ -43,7 +43,7 @@ loginLDAP query pass ldapUri initDN initPassword searchDN ldapScope =
                                                  :: IO (Either LDAPException ())
    case initBindResult of
      Right _ -> do -- Successful initial bind
-       entry <- ldapSearch ldapOBJ
+       entries <- ldapSearch ldapOBJ
                            searchDN
                            ldapScope
                            (Just $ unpack query)
@@ -51,8 +51,8 @@ loginLDAP query pass ldapUri initDN initPassword searchDN ldapScope =
                            False
 -- FIXME y u no make new function for nested case statement?       
        -- We try to bind with the dn of the returned entry
-       case entry of
-         [LDAPEntry dn _] -> do
+       case entries of
+         [entry@(LDAPEntry dn _)] -> do
                              ldapOBJ' <- ldapInitialize ldapUri
                              userBindResult <- try (ldapSimpleBind ldapOBJ' dn pass) :: IO (Either LDAPException ())
                              case userBindResult of
