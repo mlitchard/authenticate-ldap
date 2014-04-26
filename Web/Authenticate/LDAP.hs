@@ -29,7 +29,6 @@ instance Show LDAPAuthResult where
                                     "server failed"
    
 loginLDAP :: Text -> -- user's identifier
-             String -> -- user's DN
              String -> -- user's password
              String -> -- LDAP URI
              String -> -- DN for initial bind
@@ -37,7 +36,7 @@ loginLDAP :: Text -> -- user's identifier
              Maybe String -> --  Base DN for user search, if any
              LDAPScope -> -- Scope of User search
              IO LDAPAuthResult
-loginLDAP user userDN pass ldapUri initDN initPassword searchDN ldapScope =
+loginLDAP user pass ldapUri initDN initPassword searchDN ldapScope =
   do
    ldapOBJ <- ldapInitialize ldapUri
    initBindResult <- try (ldapSimpleBind ldapOBJ initDN initPassword) 
@@ -51,10 +50,11 @@ loginLDAP user userDN pass ldapUri initDN initPassword searchDN ldapScope =
                            LDAPAllUserAttrs
                            False
 -- FIXME y u no make new function for nested case statement?       
+       -- We try to bind with the dn of the returned entry
        case entry of
-         [LDAPEntry _ _] -> do
+         [LDAPEntry dn _] -> do
                              ldapOBJ' <- ldapInitialize ldapUri
-                             userBindResult <- try (ldapSimpleBind ldapOBJ' userDN pass) :: IO (Either LDAPException ())
+                             userBindResult <- try (ldapSimpleBind ldapOBJ' dn pass) :: IO (Either LDAPException ())
                              case userBindResult of
                                Right _ -> return $ Ok entry -- Successful user bind
                                Left _ -> return WrongPassword
