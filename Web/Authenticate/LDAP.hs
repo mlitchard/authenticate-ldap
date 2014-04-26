@@ -28,7 +28,7 @@ instance Show LDAPAuthResult where
   show InitialBindFail            = "The initial bind attempt to the ldap" ++
                                     "server failed"
    
-loginLDAP :: Text -> -- user's identifier
+loginLDAP :: Text -> -- query string (eg: uid=username or email=a@b.com)
              String -> -- user's password
              String -> -- LDAP URI
              String -> -- DN for initial bind
@@ -36,7 +36,7 @@ loginLDAP :: Text -> -- user's identifier
              Maybe String -> --  Base DN for user search, if any
              LDAPScope -> -- Scope of User search
              IO LDAPAuthResult
-loginLDAP user pass ldapUri initDN initPassword searchDN ldapScope =
+loginLDAP query pass ldapUri initDN initPassword searchDN ldapScope =
   do
    ldapOBJ <- ldapInitialize ldapUri
    initBindResult <- try (ldapSimpleBind ldapOBJ initDN initPassword) 
@@ -46,7 +46,7 @@ loginLDAP user pass ldapUri initDN initPassword searchDN ldapScope =
        entry <- ldapSearch ldapOBJ
                            searchDN
                            ldapScope
-                           (Just ("sAMAccountName=" ++  (unpack user)))
+                           (Just $ unpack query)
                            LDAPAllUserAttrs
                            False
 -- FIXME y u no make new function for nested case statement?       
