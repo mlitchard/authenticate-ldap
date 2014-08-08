@@ -16,7 +16,7 @@ import LDAP
 import Control.Exception
 import Control.Monad.IO.Class
   
-data LDAPAuthResult = Ok [LDAPEntry]
+data LDAPAuthResult = Ok LDAPEntry
                     | NoSuchUser
                     | WrongPassword
                     | InitialBindFail
@@ -28,34 +28,33 @@ instance Show LDAPAuthResult where
   show InitialBindFail            = "The initial bind attempt to the ldap" ++
                                     "server failed"
    
-loginLDAP :: Text -> -- user's identifier
-             String -> -- user's DN
+loginLDAP :: Text -> -- query string (eg: uid=username or email=a@b.com)
              String -> -- user's password
-             String -> -- LDAPHost
-             LDAPInt -> -- LDAP port
+             String -> -- LDAP URI
              String -> -- DN for initial bind
              String -> -- Password for initial bind
              Maybe String -> --  Base DN for user search, if any
              LDAPScope -> -- Scope of User search
              IO LDAPAuthResult
-loginLDAP user userDN pass ldapHost ldapPort' initDN initPassword searchDN ldapScope =
+loginLDAP query pass ldapUri initDN initPassword searchDN ldapScope =
   do
-   ldapOBJ <- ldapInit ldapHost ldapPort'
+   ldapOBJ <- ldapInitialize ldapUri
    initBindResult <- try (ldapSimpleBind ldapOBJ initDN initPassword) 
                                                  :: IO (Either LDAPException ())
    case initBindResult of
      Right _ -> do -- Successful initial bind
-       entry <- ldapSearch ldapOBJ
+       entries <- ldapSearch ldapOBJ
                            searchDN
                            ldapScope
-                           (Just ("sAMAccountName=" ++  (unpack user)))
+                           (Just $ unpack query)
                            LDAPAllUserAttrs
                            False
 -- FIXME y u no make new function for nested case statement?       
-       case entry of
-         [LDAPEntry _ _] -> do
-                             ldapOBJ' <- ldapInit ldapHost ldapPort'  
-                             userBindResult <- try (ldapSimpleBind ldapOBJ' userDN pass) :: IO (Either LDAPException ())
+       -- We try to bind with the dn of the returned entry
+       case entries of
+         [entry@(LDAPEntry dn _)] -> do
+                             ldapOBJ' <- ldapInitialize ldapUri
+                             userBindResult <- try (ldapSimpleBind ldapOBJ' dn pass) :: IO (Either LDAPException ())
                              case userBindResult of
                                Right _ -> return $ Ok entry -- Successful user bind
                                Left _ -> return WrongPassword
