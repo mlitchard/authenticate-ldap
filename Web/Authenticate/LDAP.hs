@@ -14,7 +14,6 @@ module Web.Authenticate.LDAP
 import Data.Text (Text,unpack)
 import LDAP
 import Control.Exception
-import Control.Monad.IO.Class
   
 data LDAPAuthResult = Ok LDAPEntry
                     | NoSuchUser
