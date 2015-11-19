@@ -14,23 +14,21 @@ module Web.Authenticate.LDAP
 import Data.Text (Text,unpack)
 import LDAP
 import Control.Exception
-import Control.Monad.IO.Class
 
 data LDAPAuthResult = Ok LDAPEntry
                     -- ^ Login successful
                     | NoSuchUser
                     -- ^ Wrong username
-                    | WrongPassword
+                    | WrongPassword LDAPException
                     -- ^ Wrong password
-                    | InitialBindFail
+                    | InitialBindFail LDAPException
                     -- ^ The initial bind attempt to the ldap server failed
 
 instance Show LDAPAuthResult where
-  show (Ok _            )         = "Login successful"
-  show NoSuchUser                 = "Wrong username"
-  show WrongPassword              = "Wrong password"
-  show InitialBindFail            = "The initial bind attempt to the ldap" ++
-                                    "server failed"
+  show (Ok _)               = "Login successful"
+  show NoSuchUser           = "Wrong username"
+  show (WrongPassword e)    = "Wrong password: " ++ show e
+  show (InitialBindFail e)  = "LDAP connection failed: " ++ show e
 
 loginLDAP :: Text -> -- ^ query string (eg: uid=username or email=a@b.com)
              String -> -- ^ user's password
@@ -61,6 +59,6 @@ loginLDAP query pass ldapUri initDN initPassword searchDN ldapScope =
                              userBindResult <- try (ldapSimpleBind ldapOBJ' dn pass) :: IO (Either LDAPException ())
                              case userBindResult of
                                Right _ -> return $ Ok entry -- Successful user bind
-                               Left _ -> return WrongPassword
+                               Left e -> return $ WrongPassword e
          _               -> return NoSuchUser
-     Left _ -> return InitialBindFail
+     Left e -> return $ InitialBindFail e
