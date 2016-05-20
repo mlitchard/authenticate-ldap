@@ -16,8 +16,8 @@ homepage:        http://github.com/mlitchard/authenticate-ldap
 library
     build-depends:   base                          >= 4        && < 5
                    , text
-                   , LDAP                          >= 0.6.6
-                   , transformers                  >= 0.2.2.0
+                   , LDAP                          
+                   , transformers                  
     exposed-modules: Web.Authenticate.LDAP
     ghc-options:     -Wall
 
