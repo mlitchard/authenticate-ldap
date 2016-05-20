@@ -16,10 +16,14 @@ import LDAP
 import Control.Exception
 import Control.Monad.IO.Class
   
-data LDAPAuthResult = Ok LDAPEntry
+data LDAPAuthResult = Ok [LDAPEntry]
+                    -- ^ Login successful
                     | NoSuchUser
+                    -- ^ Wrong username
                     | WrongPassword
+                    -- ^ Wrong password
                     | InitialBindFail
+                    -- ^ The initial bind attempt to the ldap server failed
 
 instance Show LDAPAuthResult where
   show (Ok _            )         = "Login successful"
@@ -28,13 +32,15 @@ instance Show LDAPAuthResult where
   show InitialBindFail            = "The initial bind attempt to the ldap" ++
                                     "server failed"
    
-loginLDAP :: Text -> -- query string (eg: uid=username or email=a@b.com)
-             String -> -- user's password
-             String -> -- LDAP URI
-             String -> -- DN for initial bind
-             String -> -- Password for initial bind
-             Maybe String -> --  Base DN for user search, if any
-             LDAPScope -> -- Scope of User search
+loginLDAP :: Text -> -- ^ user's identifier
+             String -> -- ^ user's DN
+             String -> -- ^ user's password
+             String -> -- ^ LDAPHost
+             LDAPInt -> -- ^ LDAP port
+             String -> -- ^ DN for initial bind
+             String -> -- ^ Password for initial bind
+             Maybe String -> -- ^ Base DN for user search, if any
+             LDAPScope -> -- ^ Scope of User search
              IO LDAPAuthResult
 loginLDAP query pass ldapUri initDN initPassword searchDN ldapScope =
   do
