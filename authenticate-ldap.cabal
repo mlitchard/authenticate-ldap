@@ -1,5 +1,5 @@
 name:            authenticate-ldap
-version:         0.0.5
+version:         0.0.6
 license:         BSD3
 license-file:    LICENSE
 author:          Michael Litchard 
@@ -16,8 +16,8 @@ homepage:        http://github.com/mlitchard/authenticate-ldap
 library
     build-depends:   base                          >= 4        && < 5
                    , text
-                   , LDAP                          >= 0.6.6
-                   , transformers                  >= 0.2.2.0
+                   , LDAP                          
+                   , transformers                  
     exposed-modules: Web.Authenticate.LDAP
     ghc-options:     -Wall
 
