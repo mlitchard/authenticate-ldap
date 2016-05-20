@@ -1,8 +1,8 @@
 name:            authenticate-ldap
-version:         0.0.6
+version:         0.0.7
 license:         BSD3
 license-file:    LICENSE
-author:          Michael Litchard 
+author:          Michael Litchard, Axel Angel, Hugo Daniel
 maintainer:      Michael Litchard 
 synopsis:        LDAP authentication for Haskell web applications.
 description:     LDAP authentication for Haskell web applications. 
